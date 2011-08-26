@@ -1,47 +1,19 @@
 #coding:utf-8
-import tweepy
-from time import sleep
-auth = tweepy.OAuthHandler(consumer_key='FSWJUlCHsAaiLBDY1MMEA', consumer_secret='aCFv6Tslb038cdUAIv7m4QDplBn076wvLd4YKmC3yU')
-
-#try:
-#    redirect_url = auth.get_authorization_url()
-#except tweepy.TweepError:
-#    print 'Error! Failed to get request token.'
-
-#print redirect_url
-#verifier = raw_input('Verifier:')
-
-#try:
-#    auth.get_access_token(verifier)
-#except tweepy.TweepError:
-#    print 'Error! Failed to get access token.'
-    
-#print auth.access_token.key, auth.access_token.secret
-
-nums = u"① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩"
-key = "135845084-FONlvU4wGXyl9o4RkfyPdv4grclbqr4Pi2UH2w3j"
-secret = "DC6I1xp2uONTIYOL2DtEIljhl46LEkUwlPB5NUEBds"
-#userid = 135845084
-
-auth.set_access_token(key, secret)
-api = tweepy.API(auth)
-#userid = api.me().id
+from tweepy.streaming import StreamListener, Stream
+import sqlite3, re
+import memcache
 
 class MemCache:
     def __enter__(self):
-        import memcache
         self.mc = memcache.Client(['unix:/tmp/memcached.sock'], debug=0)
         return self.mc
     def __exit__(self, type, value, traceback):
         self.mc.disconnect_all()
 
-nums = nums.split()
-import sqlite3, re
-
-rsettag = re.compile("^@[oO]68 ([a-zA-Z0-9_-]+) ([^\s]+)$")
-rgettag = re.compile("^@[oO]68 ([a-zA-Z0-9_-]+)$")
-
 class TagHandler:
+    nums = u"① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩"
+    nums = nums.split()
+    
     def __init__(self, api):
         self.db = sqlite3.connect("bot.db")
         self.c = self.db.cursor()
@@ -118,31 +90,66 @@ class TagHandler:
             tweetstr = u"@%s %s @%s 还没有Tag哦! 发送 \"@o68 %s 您想添加的Tag\" 立刻给Ta添加Tag吧!" % (replyto, self.get_nick(user), user, user)
         else:
             tags = l[0].split(",")
-            tags = "".join(["".join(x) for x in zip(nums[:len(tags)], tags)])
+            tags = "".join(["".join(x) for x in zip(self.nums[:len(tags)], tags)])
             tweetstr = u"@%(replyto)s 【%(nick)s @%(user)s】的推特Tag:%(tags)s" % {"replyto": replyto, "user": user, "tags": tags, "nick": self.get_nick(user)}
         
         self.tweet(tweetstr)
 
-taghandler = TagHandler(api)
-
-from tweepy.streaming import StreamListener, Stream
-class Listener(StreamListener):        
+class Listener(StreamListener):
+    rsettag = re.compile("^@[oO]68 ([a-zA-Z0-9_-]+) ([^\s]+)$")
+    rgettag = re.compile("^@[oO]68 ([a-zA-Z0-9_-]+)$")
+    
+    def __init__(self, taghandler):
+        StreamListener.__init__(self)
+        self.taghandler = taghandler
+    
     def on_status(self, status):
         text = status.text.strip()
         replyto = status.user.screen_name
         print "Original tweet:", replyto, ":", text
         
-        settag = rsettag.findall(text)
+        settag = self.rsettag.findall(text)
         if len(settag):
-            print "Setting tag for user %s: %s" % (user, tag)
             user, tag = settag[0]
-            taghandler.save_tag(user, tag, replyto)
-        gettag = rgettag.findall(text)
+            print "Setting tag for user %s: %s" % (user, tag)
+            self.taghandler.save_tag(user, tag, replyto)
+        gettag = self.rgettag.findall(text)
         if len(gettag):
-            print "Getting tag for user %s" % (user, )
             user = gettag[0]
-            taghandler.get_tag(user, replyto)
+            print "Getting tag for user %s" % (user, )
+            self.taghandler.get_tag(user, replyto)
+
+if __name__ == "__main__":
+    import tweepy
+    auth = tweepy.OAuthHandler(consumer_key='FSWJUlCHsAaiLBDY1MMEA', consumer_secret='aCFv6Tslb038cdUAIv7m4QDplBn076wvLd4YKmC3yU')
+    
+    # Uncomment when you want to authorize a new bot
+    
+    #try:
+    #    redirect_url = auth.get_authorization_url()
+    #except tweepy.TweepError:
+    #    print 'Error! Failed to get request token.'
+
+    #print redirect_url
+    #verifier = raw_input('Verifier:')
+
+    #try:
+    #    auth.get_access_token(verifier)
+    #except tweepy.TweepError:
+    #    print 'Error! Failed to get access token.'
         
-listener = Listener()
-stream = Stream(auth, listener)
-stream.filter(track=("o68", ))
+    #key, secret = auth.access_token.key, auth.access_token.secret
+    #print key, secret
+
+    key = "135845084-FONlvU4wGXyl9o4RkfyPdv4grclbqr4Pi2UH2w3j"
+    secret = "DC6I1xp2uONTIYOL2DtEIljhl46LEkUwlPB5NUEBds"
+
+    auth.set_access_token(key, secret)
+    api = tweepy.API(auth)
+    
+    taghandler = TagHandler(api)
+            
+    listener = Listener(taghandler)
+    stream = Stream(auth, listener)
+    stream.filter(track=("o68", ))
+
