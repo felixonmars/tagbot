@@ -1,4 +1,9 @@
 #!/usr/bin/env python2
+
+import sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
+
 from tagbot import TagHandler, Bot
 import random
 
