@@ -143,7 +143,9 @@ class TagHandler(BaseHandler):
                             user = user,
                             nick = self.get_nick(user)
                          )
-            tweetstr = u"@%(replyto)s %(nick)s @%(user)s 还没有Tag哦! 发送 \"@o68 %(user)s 您想添加的Tag\" 立刻给Ta添加Tag吧<(=^_^=)>" % params
+            tweetstr = u"%(nick)s @%(user)s 还没有Tag哦! 发送 \"@o68 %(user)s 您想添加的Tag\" 立刻给Ta添加Tag吧<(=^_^=)>" % params
+            if replyto:
+                tweetstr = u"@%(replyto)s " % params + tweetstr
             
         else:
             tags = eval(l[0])
@@ -155,7 +157,9 @@ class TagHandler(BaseHandler):
                             tags = tags_formatted,
                             nick = self.get_nick(user)
                          )
-            tweetstr = u"@%(replyto)s 【%(nick)s @%(user)s】的推特Tag:%(tags)s" % params
+            tweetstr = u"【%(nick)s @%(user)s】的推特Tag:%(tags)s" % params
+            if replyto:
+                tweetstr = u"@%(replyto)s " % params + tweetstr
         
         self.tweet(tweetstr)
     
