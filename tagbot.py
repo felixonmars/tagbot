@@ -1,4 +1,5 @@
 #coding:utf-8
+import tweepy
 from tweepy.streaming import StreamListener, Stream
 import sqlite3, re
 import memcache
@@ -273,43 +274,44 @@ class Listener(StreamListener):
             
         self.customhandler.detect(status.user.screen_name, text[len(prefix):])
         
-
-if __name__ == "__main__":
-    import tweepy
-    
+class Bot:
     consumer_key='FSWJUlCHsAaiLBDY1MMEA'
     consumer_secret='aCFv6Tslb038cdUAIv7m4QDplBn076wvLd4YKmC3yU'
     
     key = "135845084-FONlvU4wGXyl9o4RkfyPdv4grclbqr4Pi2UH2w3j"
     secret = "DC6I1xp2uONTIYOL2DtEIljhl46LEkUwlPB5NUEBds"
     
-    auth = tweepy.OAuthHandler(consumer_key = consumer_key,
-                               consumer_secret = consumer_secret)
-    # Uncomment when you want to authorize a new bot
+    def __init__(self):
+        self.auth = tweepy.OAuthHandler(consumer_key = self.consumer_key,
+                                        consumer_secret = self.consumer_secret)
+        self.auth.set_access_token(self.key, self.secret)
+        self.api = tweepy.API(self.auth)
     
-    #try:
-    #    redirect_url = auth.get_authorization_url()
-    #except tweepy.TweepError:
-    #    print 'Error! Failed to get request token.'
-
-    #print redirect_url
-    #verifier = raw_input('Verifier:')
-
-    #try:
-    #    auth.get_access_token(verifier)
-    #except tweepy.TweepError:
-    #    print 'Error! Failed to get access token.'
-        
-    #key, secret = auth.access_token.key, auth.access_token.secret
-    #print key, secret
-    
-    auth.set_access_token(key, secret)
-    api = tweepy.API(auth)
-    
-    taghandler = TagHandler(api)
-    customhandler = CustomHandler(api)
+    def auth(self):
+        try:
+            redirect_url = self.auth.get_authorization_url()
+        except tweepy.TweepError:
+            print 'Error! Failed to get request token.'
             
-    listener = Listener(taghandler, customhandler)
-    stream = Stream(auth, listener)
+        verifier = raw_input('Verifier:')
+
+        try:
+            self.auth.get_access_token(verifier)
+        except tweepy.TweepError:
+            print 'Error! Failed to get access token.'
+           
+        self.key, self.secret = self.auth.access_token.key, self.auth.access_token.secret
+        print self.key, self.secret
+    
+    def stream(self):
+        self.taghandler = TagHandler(self.api)
+        self.customhandler = CustomHandler(self.api)
+        self.listener = Listener(self.taghandler, self.customhandler)
+        self.stream = Stream(self.auth, self.listener)
+        return self.stream
+        
+if __name__ == "__main__":
+    bot = Bot()
+    stream = bot.stream()
     stream.filter(track=("o68", ))
 
