@@ -81,9 +81,9 @@ class TagHandler(BaseHandler):
             tags = eval(l[0])
             tagvals = []
             commenters = []
-            for tag in tags:
-                commenters.append(tag["commenter"])
-                tagvals.append(tag["tag"])
+            for atag in tags:
+                commenters.append(atag["commenter"])
+                tagvals.append(atag["tag"])
             
             goon = True
             if commenter in commenters:
