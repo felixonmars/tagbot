@@ -201,39 +201,41 @@ class TagHandler(BaseHandler):
                 
         self.db.commit()
         self.tweet(tweetstr)
-    
         
 class CustomHandler(BaseHandler):
     def detect(self, user, text):
-        if u"傲娇" in text:
-            params = dict(
-                            user = user,
-                            nick = self.get_nick(user)
-                         )
-            self.tweet(u"@%(user)s 哼! 我才不是傲娇呢! %(nick)s才是傲娇!" % params)
-            return
+        normalarray = {
+            u"傲娇": u"@%(user)s 哼! 我才不是傲娇呢! %(nick)s才是傲娇!",
+            u"卖萌": u"@%(user)s 喵<(=^_^=)>",
+            u"猫老师": u"@%(user)s 大力Pia!<(=ｏ‵-′)ノ☆ 猫老师 @_ym",
+            u"交尾": u"@%(user)s 变态! 叫%(nick)s的人我讨厌死了!",
+            u"求包养": u"@%(user)s 很遗憾, 你还没有资格!",
+            u"求交往": u"@%(user)s 我拒绝!",
+            u"求合体": u"@%(user)s 我来组成头部<(=^_^=)>",
+            u"求治愈": u"@%(user)s 喵<(=^_^=)>",
+            u"求虐": u"@%(user)s Pia!<(=ｏ‵-′)ノ☆",
+            }
+            
+        params = dict(
+                        user = user,
+                        nick = self.get_nick(user),
+                     )
+        
+        for key in normalarray.keys():
+            if key in text:
+                self.tweet(normalarray[key] % params)
+                return
         if text == "/pia" or text == "/pia!":
-            params = dict(
-                            user = user,
-                            nick = self.get_nick(user)
-                         )
-            self.tweet(u"@%(user)s 用力回pia %(nick)s @%(user)s!" % params)
+            self.tweet(u"@%(user)s 用力回Pia!<(=ｏ‵-′)ノ☆ %(nick)s @%(user)s!" % params)
             return
         if text[:4] == "/pia":
             target = text[4:].strip()
             if target != "@" and target[0] == "@":
                 target = target[1:]
-            params = dict(
-                            replyto = user,
-                            user = target,
-                            nick = self.get_nick(target)
-                         )
-            self.tweet(u"@%(replyto)s 大力pia %(nick)s @%(user)s!" % params)
+            params["target"] = target
+            params["targetnick"] = self.get_nick(target)
+            self.tweet(u"@%(user)s 大力Pia!<(=ｏ‵-′)ノ☆ %(targetnick)s @%(target)s!" % params)
             return
-        params = dict(
-                        user = user,
-                        nick = self.get_nick(user)
-                     )
         self.tweet(u"@%(user)s 呜..%(nick)s说的话我怎么听不懂呢.." % params)
             
 
