@@ -63,15 +63,15 @@ class TagHandler(BaseHandler):
             pass
             
     def save_tag(self, user, tag, commenter):
-        self.c.execute("SELECT tags FROM tags WHERE user = ?", (user, ))
+        self.c.execute("SELECT tags FROM tags WHERE user = ?", (user.lower(), ))
         l = self.c.fetchone()
         if l == None:
             self.c.execute("INSERT INTO tags(user, tags) VALUES(?,?)",
-                           (user, str([{
-                                        "tag": tag,
-                                        "commenter": commenter,
-                                        "added": datetime.datetime.now()
-                                       }])))
+                           (user.lower(), str([{
+                                            "tag": tag,
+                                            "commenter": commenter,
+                                            "added": datetime.datetime.now()
+                                            }])))
             params = dict(
                             replyto = commenter,
                             user = user,
@@ -124,7 +124,7 @@ class TagHandler(BaseHandler):
                 
                 newtags = str(tags)
                 self.c.execute("UPDATE tags SET tags = ? WHERE user = ?",
-                               (newtags, user))
+                               (newtags, user.lower()))
                 params = dict(
                             replyto = commenter,
                             user = user,
@@ -137,7 +137,7 @@ class TagHandler(BaseHandler):
         self.tweet(tweetstr)
     
     def get_tag(self, user, replyto):
-        self.c.execute("SELECT tags FROM tags WHERE user = ?", (user, ))
+        self.c.execute("SELECT tags FROM tags WHERE user = ?", (user.lower(), ))
         l = self.c.fetchone()
         if l is None or l[0] == "[]":
             params = dict(
@@ -166,7 +166,7 @@ class TagHandler(BaseHandler):
         self.tweet(tweetstr)
     
     def del_tag(self, user, tag):
-        self.c.execute("SELECT tags FROM tags WHERE user = ?", (user, ))
+        self.c.execute("SELECT tags FROM tags WHERE user = ?", (user.lower(), ))
         l = self.c.fetchone()
         if l is None or l[0] == "[]":
             params = dict(
@@ -194,7 +194,7 @@ class TagHandler(BaseHandler):
                 tags.remove(xtag)
                 
                 self.c.execute("UPDATE tags SET tags = ? WHERE user = ?",
-                               (str(tags), user))
+                               (str(tags), user.lower()))
                 params = dict(
                             user = user,
                             tag = tag,
