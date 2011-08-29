@@ -229,7 +229,7 @@ class CustomHandler(BaseHandler):
         for key in normalarray.keys():
             if key in text:
                 tweetstr = normalarray[key]
-                if tweetstr is ListType:
+                if type(tweetstr) is ListType:
                     tweetstr = random.choice(tweetstr)
                 self.tweet(tweetstr % params)
                 return
