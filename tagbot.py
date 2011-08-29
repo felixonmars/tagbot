@@ -4,6 +4,8 @@ from tweepy.streaming import StreamListener, Stream
 import sqlite3, re
 import memcache
 import datetime
+import random
+from types import ListType
 
 class MemCache:
     def __enter__(self):
@@ -207,7 +209,10 @@ class CustomHandler(BaseHandler):
         normalarray = {
             u"傲娇": u"@%(user)s 哼! 我才不是傲娇呢! %(nick)s才是傲娇!",
             u"卖萌": u"@%(user)s 喵<(=^_^=)>",
-            u"猫老师": u"@%(user)s 大力Pia!<(=ｏ‵-′)ノ☆ 猫老师 @_ym",
+            u"猫老师": [
+                        u"@%(user)s 大力Pia!<(=ｏ‵-′)ノ☆ 猫老师 @_ym",
+                        u"@%(user)s 大力摔猫老师 @_ym",
+                    ],
             u"交尾": u"@%(user)s 变态! 叫%(nick)s的人我讨厌死了!",
             u"求包养": u"@%(user)s 很遗憾, 你还没有资格!",
             u"求交往": u"@%(user)s 我拒绝!",
@@ -223,7 +228,10 @@ class CustomHandler(BaseHandler):
         
         for key in normalarray.keys():
             if key in text:
-                self.tweet(normalarray[key] % params)
+                tweetstr = normalarray[key]
+                if tweetstr is ListType:
+                    tweetstr = random.choice(tweetstr)
+                self.tweet(tweetstr % params)
                 return
         if text == "/pia" or text == "/pia!":
             self.tweet(u"@%(user)s 用力回Pia!<(=ｏ‵-′)ノ☆ %(nick)s @%(user)s!" % params)
