@@ -13,12 +13,26 @@ class MemCache:
         return self.mc
     def __exit__(self, type, value, traceback):
         self.mc.disconnect_all()
-        
+
+def check_user(func):
+    def __check(*args, **kwargs):
+        self, user, replyto = args[:3]
+        try:
+            nick = self.get_nick(user, forcecheck = True)
+            return func(*args, nick = nick, **kwargs)
+        except NameError:
+            params = dict(
+                            replyto = replyto,
+                            user = user,
+                        )
+            self.tweet(u"@%(replyto)s 这个世界上还木有叫 @%(user)s 的猫儿呢.." % params)
+    return __check
+
 class BaseHandler:
     def __init__(self, api):
         self.api = api
         
-    def get_nick(self, user):
+    def get_nick(self, user, forcecheck = False):
         with MemCache() as mc:
             key = user.encode("utf-8")
             try:
@@ -32,6 +46,8 @@ class BaseHandler:
                     a = self.api.get_user(user)
                     a = a.name
                 except:
+                    if forcecheck:
+                        raise NameError
                     a = ""
             nick = a
             try:
@@ -61,22 +77,23 @@ class TagHandler(BaseHandler):
             self.c.execute("CREATE TABLE tags(user str, tags str)")
         except sqlite3.OperationalError:
             pass
-            
-    def save_tag(self, user, tag, commenter):
+    
+    @check_user
+    def save_tag(self, user, replyto, tag, nick):
         self.c.execute("SELECT tags FROM tags WHERE user = ?", (user.lower(), ))
         l = self.c.fetchone()
         if l == None:
             self.c.execute("INSERT INTO tags(user, tags) VALUES(?,?)",
                            (user.lower(), str([{
                                             "tag": tag,
-                                            "commenter": commenter,
+                                            "commenter": replyto,
                                             "added": datetime.datetime.now()
                                             }])))
             params = dict(
-                            replyto = commenter,
+                            replyto = replyto,
                             user = user,
                             tag = tag,
-                            nick = self.get_nick(user)
+                            nick = nick
                         )
             tweetstr = u"@%(replyto)s 给【%(nick)s @%(user)s】添加Tag:%(tag)s 成功了喵<(=^_^=)>" % params
         else:
@@ -88,13 +105,13 @@ class TagHandler(BaseHandler):
                 tagvals.append(atag["tag"])
             
             goon = True
-            if commenter in commenters:
+            if replyto in commenters:
                 print "User already Tagged this target, ignoring"
                 params = dict(
-                            replyto = commenter,
+                            replyto = replyto,
                             user = user,
                             tag = tag,
-                            nick = self.get_nick(user)
+                            nick = nick
                          )
                 tweetstr = u"@%(replyto)s 乃已经给【%(nick)s %(user)s】添加过Tag啦<(=￣▽￣=)>" % params
                 goon = False
@@ -102,10 +119,10 @@ class TagHandler(BaseHandler):
             if goon and tag in tagvals:
                 print "Tag already exists, ignoring"
                 params = dict(
-                            replyto = commenter,
+                            replyto = replyto,
                             user = user,
                             tag = tag,
-                            nick = self.get_nick(user)
+                            nick = nick
                          )
                 tweetstr = u"@%(replyto)s 【%(nick)s %(user)s】已经有这个Tag:%(tag)s 啦<(=￣▽￣=)>" % params
                 goon = False
@@ -113,7 +130,7 @@ class TagHandler(BaseHandler):
             if goon:
                 tags.append({
                                 "tag": tag,
-                                "commenter": commenter,
+                                "commenter": replyto,
                                 "added": datetime.datetime.now()
                             })
                             
@@ -126,24 +143,25 @@ class TagHandler(BaseHandler):
                 self.c.execute("UPDATE tags SET tags = ? WHERE user = ?",
                                (newtags, user.lower()))
                 params = dict(
-                            replyto = commenter,
+                            replyto = replyto,
                             user = user,
                             tag = tag,
-                            nick = self.get_nick(user)
+                            nick = nick
                          )
                 tweetstr = u"@%(replyto)s 给【%(nick)s @%(user)s】添加Tag:%(tag)s 成功了喵<(=^_^=)>" % params
                 
         self.db.commit()
         self.tweet(tweetstr)
     
-    def get_tag(self, user, replyto):
+    @check_user
+    def get_tag(self, user, replyto, nick):
         self.c.execute("SELECT tags FROM tags WHERE user = ?", (user.lower(), ))
         l = self.c.fetchone()
         if l is None or l[0] == "[]":
             params = dict(
                             replyto = replyto,
                             user = user,
-                            nick = self.get_nick(user)
+                            nick = nick
                          )
             tweetstr = u"%(nick)s @%(user)s 还没有Tag哦! 发送 \"@o68 %(user)s 您想添加的Tag\" 立刻给Ta添加Tag吧<(=^_^=)>" % params
             if replyto:
@@ -157,7 +175,7 @@ class TagHandler(BaseHandler):
                             replyto = replyto,
                             user = user,
                             tags = tags_formatted,
-                            nick = self.get_nick(user)
+                            nick = nick
                          )
             tweetstr = u"【%(nick)s @%(user)s】的推特Tag:%(tags)s" % params
             if replyto:
@@ -171,7 +189,7 @@ class TagHandler(BaseHandler):
         if l is None or l[0] == "[]":
             params = dict(
                             user = user,
-                            nick = self.get_nick(user)
+                            nick = nick
                          )
             tweetstr = u"@%(user)s %(nick)s乃还没有Tag呢<(=￣▽￣=)>" % params
             
@@ -187,7 +205,7 @@ class TagHandler(BaseHandler):
             if not found:
                 params = dict(
                             user = user,
-                            nick = self.get_nick(user)
+                            nick = nick
                          )
                 tweetstr = u"@%(user)s %(nick)s乃没有这个Tag<(=￣▽￣=)>" % params
             else:
@@ -268,7 +286,7 @@ class Listener(StreamListener):
         if len(settag):
             user, tag = settag[0]
             print "Setting tag for user %s: %s" % (user, tag)
-            self.taghandler.save_tag(user, tag, replyto)
+            self.taghandler.save_tag(user, replyto, tag)
             return
             
         gettag = self.rgettag.findall(text)
