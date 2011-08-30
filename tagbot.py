@@ -165,7 +165,7 @@ class TagHandler(BaseHandler):
                             botname = self.botname,
                             nick = nick
                          )
-            tweetstr = u"%(nick)s @%(user)s 还没有Tag哦! 发送 \"@%(botname) %(user)s 您想添加的Tag\" 立刻给Ta添加Tag吧<(=^_^=)>" % params
+            tweetstr = u"%(nick)s @%(user)s 还没有Tag哦! 发送 \"@%(botname) %(user)s=您想添加的Tag\" 立刻给Ta添加Tag吧<(=^_^=)>" % params
             if replyto:
                 tweetstr = u"@%(replyto)s " % params + tweetstr
             
