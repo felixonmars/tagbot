@@ -95,7 +95,7 @@ class TagHandler(BaseHandler):
                             tag = tag,
                             nick = nick
                         )
-            tweetstr = u"@%(replyto)s 给【%(nick)s @%(user)s】添加Tag:%(tag)s 成功了喵<(=^_^=)>" % params
+            tweetstr = u"@%(replyto)s 给【%(nick)s @%(user)s 】添加Tag:%(tag)s 成功了喵<(=^_^=)>" % params
         else:
             tags = eval(l[0])
             tagvals = []
@@ -113,7 +113,7 @@ class TagHandler(BaseHandler):
                             tag = tag,
                             nick = nick
                          )
-                tweetstr = u"@%(replyto)s 乃已经给【%(nick)s %(user)s】添加过Tag啦<(=￣▽￣=)>" % params
+                tweetstr = u"@%(replyto)s 乃已经给【%(nick)s %(user)s 】添加过Tag啦<(=￣▽￣=)>" % params
                 goon = False
                 
             if goon and tag in tagvals:
@@ -124,7 +124,7 @@ class TagHandler(BaseHandler):
                             tag = tag,
                             nick = nick
                          )
-                tweetstr = u"@%(replyto)s 【%(nick)s %(user)s】已经有这个Tag:%(tag)s 啦<(=￣▽￣=)>" % params
+                tweetstr = u"@%(replyto)s 【%(nick)s %(user)s 】已经有这个Tag:%(tagac)s 啦<(=￣▽￣=)>" % params
                 goon = False
             
             if goon:
@@ -148,7 +148,7 @@ class TagHandler(BaseHandler):
                             tag = tag,
                             nick = nick
                          )
-                tweetstr = u"@%(replyto)s 给【%(nick)s @%(user)s】添加Tag:%(tag)s 成功了喵<(=^_^=)>" % params
+                tweetstr = u"@%(replyto)s 给【%(nick)s @%(user)s 】添加Tag:%(tag)s 成功了喵<(=^_^=)>" % params
                 
         self.db.commit()
         self.tweet(tweetstr)
@@ -177,7 +177,7 @@ class TagHandler(BaseHandler):
                             tags = tags_formatted,
                             nick = nick
                          )
-            tweetstr = u"【%(nick)s @%(user)s】的推特Tag:%(tags)s" % params
+            tweetstr = u"【%(nick)s @%(user)s 】的推特Tag:%(tags)s" % params
             if replyto:
                 tweetstr = u"@%(replyto)s " % params + tweetstr
         
@@ -252,7 +252,7 @@ class CustomHandler(BaseHandler):
                 self.tweet(tweetstr % params)
                 return
         if text == "/pia" or text == "/pia!":
-            self.tweet(u"@%(user)s 用力回Pia!<(=ｏ‵-′)ノ☆ %(nick)s @%(user)s!" % params)
+            self.tweet(u"@%(user)s 用力回Pia!<(=ｏ‵-′)ノ☆ %(nick)s @%(user)s ! " % params)
             return
         if text[:4] == "/pia":
             target = text[4:].strip()
@@ -260,7 +260,7 @@ class CustomHandler(BaseHandler):
                 target = target[1:]
             params["target"] = target
             params["targetnick"] = self.get_nick(target)
-            self.tweet(u"@%(user)s 大力Pia!<(=ｏ‵-′)ノ☆ %(targetnick)s @%(target)s!" % params)
+            self.tweet(u"@%(user)s 大力Pia!<(=ｏ‵-′)ノ☆ %(targetnick)s @%(target)s !" % params)
             return
         self.tweet(u"@%(user)s 呜..%(nick)s说的话我怎么听不懂呢.." % params)
             
