@@ -69,8 +69,9 @@ class TagHandler(BaseHandler):
     nums = u"① ② ③ ④ ⑤ ⑥ ⑦ ⑧ ⑨ ⑩"
     nums = nums.split()
     
-    def __init__(self, api):
+    def __init__(self, api, botname):
         BaseHandler.__init__(self, api)
+        self.botname = botname
         self.db = sqlite3.connect("bot.db")
         self.c = self.db.cursor()
         try:
@@ -161,9 +162,10 @@ class TagHandler(BaseHandler):
             params = dict(
                             replyto = replyto,
                             user = user,
+                            botname = self.botname,
                             nick = nick
                          )
-            tweetstr = u"%(nick)s @%(user)s 还没有Tag哦! 发送 \"@o68 %(user)s 您想添加的Tag\" 立刻给Ta添加Tag吧<(=^_^=)>" % params
+            tweetstr = u"%(nick)s @%(user)s 还没有Tag哦! 发送 \"@%(botname) %(user)s 您想添加的Tag\" 立刻给Ta添加Tag吧<(=^_^=)>" % params
             if replyto:
                 tweetstr = u"@%(replyto)s " % params + tweetstr
             
@@ -266,11 +268,11 @@ class CustomHandler(BaseHandler):
             
 
 class Listener(StreamListener):
-    rsettag = re.compile(u"^@[oO]68 +@?([a-zA-Z0-9_-]+) *[\=\＝] *([^\s]+)$")
-    rgettag = re.compile("^@[oO]68 +@?([a-zA-Z0-9_-]+) *$")
-    rdeltag = re.compile("^@[oO]68 +\/del +([^\s]+) *$")
-    
-    def __init__(self, taghandler, customhandler):
+    def __init__(self, botname, taghandler, customhandler):
+        self.botname = botname
+        self.rsettag = re.compile(u"^@%s +@?([a-zA-Z0-9_-]+) *[\=\＝] *([^\s]+)$" % self.botname, re.IGNORECASE)
+        self.rgettag = re.compile(u"^@%s +@?([a-zA-Z0-9_-]+) *$" % self.botname, re.IGNORECASE)
+        self.rdeltag = re.compile(u"^@%s +\/del +([^\s]+) *$" % self.botname, re.IGNORECASE)
         StreamListener.__init__(self)
         self.taghandler = taghandler
         self.customhandler = customhandler
@@ -280,7 +282,7 @@ class Listener(StreamListener):
         replyto = status.user.screen_name
         print "Original tweet:", replyto, ":", text
         
-        prefix = "@o68 "
+        prefix = "@%s " % self.botname
         
         settag = self.rsettag.findall(text)
         if len(settag):
@@ -336,14 +338,16 @@ class Bot:
         print self.key, self.secret
     
     def stream(self):
-        self.taghandler = TagHandler(self.api)
+        self.botname = self.api.me().screen_name
+        print "Bot started: @" + self.botname
+        self.taghandler = TagHandler(self.api, self.botname)
         self.customhandler = CustomHandler(self.api)
-        self.listener = Listener(self.taghandler, self.customhandler)
+        self.listener = Listener(self.botname, self.taghandler, self.customhandler)
         self.stream = Stream(self.auth, self.listener)
-        return self.stream
+        self.stream.filter(track=(self.botname, ))
         
 if __name__ == "__main__":
     bot = Bot()
-    stream = bot.stream()
-    stream.filter(track=("o68", ))
+    bot.stream()
+    
 
